@@ -1,0 +1,36 @@
+import cv2
+from deepface import DeepFace
+import requests
+
+# Your Blynk details
+BLYNK_AUTH = "Your_Blynk_Auth_Token"
+BLYNK_URL = f"https://blynk.cloud/external/api/logEvent?token={BLYNK_AUTH}&event="
+
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    try:
+        # Detect emotion
+        result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
+        emotion = result[0]['dominant_emotion']
+
+        # Show on screen
+        cv2.putText(frame, f"Emotion: {emotion}", (50, 50),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.imshow("Emotion Detection", frame)
+
+        # Send to Blynk (event name must match your Blynk setup)
+        requests.get(BLYNK_URL + "emotion_alert" + "&description=" + emotion)
+
+    except Exception as e:
+        print("Error:", e)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
